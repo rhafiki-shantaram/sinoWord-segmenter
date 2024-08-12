@@ -57,10 +57,10 @@ async function uploadFileToDrive(stream, filename, folderId) {
 }
 
 app.get("/process-audio", async (req, res) => {
-    const { url, speed = 1.5, startTime = 0, duration = 5 } = req.query;
+    const { url, startTime = 0, duration = 5 } = req.query;
     const folderId = '1dcakZ4dVJ9wnMGrlOP_uZOg6xbkkP2wM';
 
-    console.log('Received request to process audio:', { url, speed, startTime, duration });
+    console.log('Received request to process audio:', { url, startTime, duration });
 
     if (!url) {
         console.error('No URL provided in the request.');
@@ -84,7 +84,6 @@ app.get("/process-audio", async (req, res) => {
         .audioCodec('libmp3lame')
         .setStartTime(startTime)
         .duration(duration)
-        .audioFilters(`atempo=${speed}`)
         .format('mp3')
         .on('start', (commandLine) => {
             console.log('Spawned ffmpeg with command:', commandLine);
