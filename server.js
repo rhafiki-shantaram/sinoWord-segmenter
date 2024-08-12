@@ -81,27 +81,33 @@ app.get("/process-audio", async (req, res) => {
         const outputStream = new PassThrough();
 
         ffmpeg(response.data)
-            .audioCodec('libmp3lame')
-            .setStartTime(startTime)
-            .duration(duration)
-            .audioFilters(`atempo=${speed}`)
-            .format('mp3')
-            .on('end', async () => {
-                console.log('Audio processing complete. Starting upload...');
-                try {
-                    const webContentLink = await uploadFileToDrive(outputStream, filename, folderId);
-                    console.log('Audio uploaded successfully:', webContentLink);
-                    res.send({ link: webContentLink });
-                } catch (error) {
-                    console.error('Failed to upload audio:', error);
-                    res.status(500).send("Failed to upload audio to Google Drive");
-                }
-            })
-            .on('error', (err) => {
-                console.error('Error processing audio:', err);
-                res.status(500).send('Error processing audio');
-            })
-            .pipe(outputStream, { end: true });
+        .audioCodec('libmp3lame')
+        .setStartTime(startTime)
+        .duration(duration)
+        .audioFilters(`atempo=${speed}`)
+        .format('mp3')
+        .on('start', (commandLine) => {
+            console.log('Spawned ffmpeg with command:', commandLine);
+        })
+        .on('progress', (progress) => {
+            console.log('Processing progress:', progress);
+        })
+        .on('end', async () => {
+            console.log('Audio processing complete. Starting upload...');
+            try {
+                const webContentLink = await uploadFileToDrive(outputStream, filename, folderId);
+                console.log('Audio uploaded successfully:', webContentLink);
+                res.send({ link: webContentLink });
+            } catch (error) {
+                console.error('Failed to upload audio:', error);
+                res.status(500).send("Failed to upload audio to Google Drive");
+            }
+        })
+        .on('error', (err) => {
+            console.error('Error processing audio:', err);
+            res.status(500).send('Error processing audio');
+        })
+        .pipe(outputStream, { end: true });
     } catch (error) {
         console.error('Error fetching audio:', error);
         res.status(500).send('Error fetching audio');
